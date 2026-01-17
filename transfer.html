@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Transfer</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      color: white;
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      flex-direction: column;
+    }
+
+    /* Loading Popup */
+    .popup {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      flex-direction: column;
+    }
+
+    .spinner {
+      width: 60px;
+      height: 60px;
+      border: 6px solid #fff;
+      border-top: 6px solid #ffd700;
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin-bottom: 20px;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .popup-box {
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+    }
+
+    /* Narration Title */
+    .title {
+      font-size: 28px;
+      font-weight: bold;
+      color: #ffd700;
+      margin-bottom: 20px;
+      text-shadow: 0 0 5px #000;
+      display: none;
+    }
+
+    /* Transfer Details */
+    .transfer-details {
+      display: none;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.1);
+      backdrop-filter: blur(12px);
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+      max-width: 400px;
+      margin: auto;
+    }
+
+    .transfer-details h2 {
+      margin-bottom: 15px;
+      font-size: 22px;
+      color: #ffd700;
+    }
+
+    .transfer-details p {
+      margin: 10px 0;
+      font-size: 17px;
+    }
+
+    /* WhatsApp Confirmation */
+    .whatsapp-confirm {
+      position: fixed;
+      bottom: 25px;
+      right: 25px;
+      cursor: pointer;
+      text-align: center;
+    }
+
+    .whatsapp-confirm img {
+      width: 70px;
+      height: 70px;
+      border-radius: 10px;
+      border: 3px solid #fff;
+      box-shadow: 0 0 12px #25d366;
+      transition: 0.3s;
+      object-fit: cover;
+    }
+
+    .whatsapp-confirm img:hover {
+      transform: scale(1.1);
+      box-shadow: 0 0 18px #25d366;
+    }
+
+    .whatsapp-confirm span {
+      display: block;
+      margin-top: 8px;
+      font-size: 14px;
+      color: #90ee90;
+    }
+
+    .back-box {
+      position: absolute;
+      top: 5px;
+      left: 5px;
+      background: rgba(255, 215, 0, 0.3); /* gold tone */
+      color: #000;
+      font-weight: bold;
+      padding: 3px 5px;
+      border-radius: 5px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: 0.3s;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4);
+    }
+
+    .back-box:hover {
+      background: #ffcc00;
+      transform: scale(1.05);
+    } 
+  </style>
+</head>
+<body>
+
+  <!-- Loading Popup -->
+  <div class="popup" id="loadingPopup">
+    <div class="spinner"></div>
+    <div class="popup-box">Loading transfer details...</div>
+  </div>
+
+  <!-- Back Button -->
+  <div class="back-box" onclick="window.location.href='dashboard.html'">⬅ Back</div>
+
+  <!-- Narration Title -->
+  <div class="title" id="jackpotTitle">GoalRush Jackpot</div>
+
+  <!-- Transfer Information -->
+  <div class="transfer-details" id="transferDetails">
+    <h2>Transfer to Fund Your Account</h2>
+    <p><strong>Bank:</strong> First Bank</p>
+    <p><strong>Account Name:</strong> GoalRush Limited</p>
+    <p><strong>Account Number:</strong> 1234567890</p>
+    <p><strong>Narration:</strong> GoalRush Jackpot</p>
+    <p style="color: #90ee90; font-size:14px;">⚡ After transfer, confirm via WhatsApp below.</p>
+  </div>
+
+  <!-- WhatsApp Confirmation Button -->
+  <div class="whatsapp-confirm">
+    <a id="whatsappLink" target="_blank">
+      <img src="WhatsApp.jpg" alt="Confirm via WhatsApp">
+      <span>Confirm Payment</span>
+      <p>+15813419686</p>
+    </a>
+  </div>
+
+  <script>
+    window.onload = function() {
+      setTimeout(function() {
+        document.getElementById("loadingPopup").style.display = "none";
+        document.getElementById("transferDetails").style.display = "block";
+        document.getElementById("jackpotTitle").style.display = "block";
+
+        const username = localStorage.getItem("username") || "Guest";
+        const phone = localStorage.getItem("phone") || "Unknown";
+
+        const message = `Hello, my name is ${username} (${phone}). I have made my payment. Please confirm my deposit.`;
+        const whatsappNumber = "15813419686"; // ✅ Your number
+
+        // ✅ Force WhatsApp app link
+        document.getElementById("whatsappLink").href =
+          `whatsapp://send?phone=${whatsappNumber}&text=${encodeURIComponent(message)}`;
+
+      }, 3000); // 3 seconds delay
+    };
+  </script>
+
+</body>
+</html>

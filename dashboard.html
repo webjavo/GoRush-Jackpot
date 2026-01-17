@@ -1,0 +1,638 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>GoalRush Jackpot - Dashboard</title>
+  <style>
+    /* === kept your look & feel; minimal tweaks only === */
+    body{margin:0;padding:0;font-family:Arial,Helvetica,sans-serif;background:#000;color:#fff}
+    .cover{width:100%;height:250px;background:url("cover.jpeg") no-repeat center center;background-size:cover;position:relative;color:#fff}
+    .logout{position:absolute;top:3px;left:5px;background:rgba(255,0,0,0.85);color:#fff;border:none;padding:6px 12px;border-radius:3px;cursor:pointer}
+    .deposit-box{position:absolute;top:1px;right:10px;background:rgba(0,128,0,0.5);padding:6px 14px;border:2px solid green;border-radius:6px;font-size:14px;font-weight:bold;color:#fff;cursor:pointer;text-align:center}
+    .profile-container{position:absolute;top:55px;right:10px;text-align:center}
+    .profile-pic{width:40px;height:40px;border-radius:50%;object-fit:cover;border:2px solid #fff;cursor:pointer}
+    .file-input{display:none}
+    .my-bet-btn{position:absolute;top:110px;left:10px;background:rgba(50,50,50,0.9);padding:8px 12px;border-radius:6px;border:2px solid #666;color:#fff;cursor:pointer;font-weight:bold;z-index:20}
+    .withdraw-btn{position:absolute;top:110px;left:300px;background:#ff9800;color:#fff;border:none;padding:6px 12px;border-radius:3px;cursor:pointer}
+    .tabs{display:flex;justify-content:center;gap:15px;background:#111;border-bottom:2px solid #333;margin-top:10px}
+    .tab{padding:20px 10px;cursor:pointer;position:relative;color:#fff}
+    .tab.active{color:green}
+    .section{display:none;padding:20px}
+    .section.active{display:block}
+    .match{margin-bottom:15px;border-bottom:1px solid #444;padding-bottom:10px}
+    .match-time{font-size:.9em;color:#bbb}
+    .options button{margin:5px;padding:6px 15px;border:1px solid green;border-radius:4px;background:#111;color:#fff;cursor:pointer}
+    .options button.active{background:green;color:#fff}
+    .howto-box{max-height:70vh;overflow-y:auto;background:#111;padding:20px;border:1px solid #2a2a2a;border-radius:8px;color:#ddd}
+    .combination-stake{display:flex;justify-content:space-between;margin:15px 0;font-size:16px;padding:0 18px}
+    .action-buttons{padding:0 18px 18px}
+    .line-box{text-align:center;border:2px solid;border-radius:6px;padding:12px;cursor:pointer;background:#111;color:#fff}
+    .line-box.green{border-color:green;color:green;background:rgba(0,0,0,0.6)}
+    .line-box.gray{border-color:gray;color:#ccc;background:rgba(0,0,0,0.3)}
+    .line-box.disabled{opacity:.5;cursor:not-allowed}
+    .line-large{padding:18px;font-size:1.05rem;border-radius:8px;margin-bottom:10px}
+    .action-row{display:flex;justify-content:space-between;gap:10px}
+    .action-row .line-box{flex:1}
+    .slip-box{position:absolute;top:150px;left:5px;width:360px;max-height:75vh;overflow-y:auto;background:#111;padding:10px;border:1px solid #444;border-radius:6px;z-index:50;display:none}
+    .slip-box h3{margin:0 0 10px;color:yellow}
+
+    /* countdown boxes */
+    .countdown{display:flex;justify-content:center;gap:10px;margin-top:12px}
+    .countdown-box{background:#111;padding:8px;border-radius:6px;text-align:center;width:70px}
+    .countdown-box span{display:block;font-size:18px;font-weight:bold;color:yellow}
+    .countdown-box small{font-size:12px;color:#aaa}
+
+    /* popup */
+    .popup-overlay{display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.6);justify-content:center;align-items:center;z-index:99999}
+    .popup-box{background:#111;color:#fff;padding:18px 20px;border-radius:8px;min-width:260px;text-align:center;box-shadow:0 8px 30px rgba(0,0,0,.6);animation:fadeIn .25s, scaleIn .25s}
+    .popup-box p{margin:0}
+    .popup-ok{margin-top:14px;padding:8px 14px;border-radius:6px;border:none;background:#2ea043;color:#fff;cursor:pointer}
+    @keyframes fadeIn{from{opacity:0}to{opacity:1}}@keyframes scaleIn{from{transform:scale(.96)}to{transform:scale(1)}}
+  </style>
+</head>
+<body>
+
+  <!-- COVER -->
+  <div class="cover">
+    <button class="logout" onclick="logout()">Logout</button>
+
+    <div class="deposit-box" id="depositBox" onclick="window.location.href='transfer.html'">
+      Deposit<br><span id="balance">NGN 0.00</span>
+    </div>
+
+    <div class="profile-container">
+      <label for="profileUpload"><img id="profileImage" class="profile-pic" src="profile.jpg" alt="profile"></label>
+      <input id="profileUpload" class="file-input" type="file" accept="image/*" onchange="changeProfile(event)">
+    </div>
+
+    <div class="cover-text" style="position:absolute;left:20px;bottom:8px">
+      <div class="line1">Predict 14 games to win</div>
+      <div class="line2" style="font-size:28px;font-weight:bold;color:yellow">NGN 200,000,000</div>
+      <div class="line3" style="color:#f33">Prizes for 13 and 12 correct predictions too!</div>
+    </div>
+
+    <button class="withdraw-btn" onclick="withdrawRedirect()">Withdraw</button>
+    <div class="my-bet-btn" onclick="toggleSlip()">🎫 My Bets</div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" data-section="goalrush">GoalRush 14</div>
+    <div class="tab" data-section="results">Previous Results</div>
+    <div class="tab" data-section="howto">How to Play</div>
+  </div>
+
+  <!-- COUNTDOWN (restored) -->
+  <div class="countdown" id="countdownRow">
+    <div class="countdown-box"><span id="d">00</span><small>Days</small></div>
+    <div class="countdown-box"><span id="h">00</span><small>Hours</small></div>
+    <div class="countdown-box"><span id="m">00</span><small>Minutes</small></div>
+    <div class="countdown-box"><span id="s">00</span><small>Seconds</small></div>
+  </div>
+
+  <!-- SECTIONS -->
+  <div id="goalrush" class="section active">
+    <!-- 14 matches (kept as you had) -->
+    <div class="match"><div class="match-time">2025-09-03 06:34 AM</div><div class="teams">1. Bournemouth - Brighton</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03 01:20 AM</div><div class="teams">2. Arsenal - Liverpool</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">3. Chelsea - Man City</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">4. Tottenham - Everton</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">5. Aston Villa - Newcastle</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">6. West Ham - Wolves</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">7. Leeds - Southampton</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">8. Leicester - Fulham</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">9. Crystal Palace - Brentford</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">10. Burnley - Norwich</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">11. Sheff Utd - Stoke</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">12. Swansea - Cardiff</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">13. Celtic - Rangers</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+    <div class="match"><div class="match-time">2025-09-03</div><div class="teams">14. PSG - Marseille</div><div class="options"><button>Home</button><button>Draw</button><button>Away</button></div></div>
+  </div>
+
+<!----//Previous results Add image here by changing picture of Previous results//------>
+
+  <div id="results" class="section">
+    <div class="results"><img src="example1.jpg" alt="Previous Result 1" style="max-width:100%"></div>
+      <div class="results"><img src="example2.jpg" alt="Previous Result 1" style="max-width:100%"></div>  
+  </div>
+
+  <div id="howto" class="section">
+    <div class="howto-box">
+      <h2>How to Play GoalRush 14</h2>
+      <p>The GoalRush 14 Jackpot Competition consists of predicting the results of 14 matches, which are selected by GoalRush, every week.</p>
+      <p>To take part and have a chance to win the jackpot, you must get registered and have at least NGN 100 in your account. If you correctly predict all 14 match results, you win the Super GoalRush Jackpot prize! The Jackpot prize pool will be split with all eligible participants, who made the same correct predictions. Consolation prizes are awarded also for correctly predicting 13 or 12 match results !!</p>
+      <p>How to Take Part
+Make your selections – On the GoalRush 14 Jackpot competition entry page, make your predictions for each one of the listed matches (Home win, Draw, Away win). The stake amount of each combination is NGN 100. You can make more than 1 prediction for one match. This will increase the stake amount by NGN 100 for every additional combination formed by your selections.</p>
+<p>Check and place bets – Make sure to check all of the selections before you click on the "Place Bet" button. Once submitted, the bets cannot be cancelled, amended or refunded. You may place bets until 14:00 Saturday at Nigeria time. The countdown to the competition’s closure time is clearly shown on the competition entry page.</p>
+<p>Check the results – on Monday Afternoon at Nigeria Time, all match results and prizes will be published in the "Previous Results" on the "Jackpot" page.</p>
+<p>Special conditions - If one Jackpot match is suspended, postponed or cancelled and not resumed within 48 hours from the initial kick-off time, it counts as Void and Jackpot prize distribution goes as follows:</p>
+<p>30% of Super Jackpot prize for 14 correct predictions;
+40% of 2nd prize for 13 correct predictions;
+50% of 3rd prize for 12 correct predictions.
+If two or more Jackpot matches are suspended, postponed or cancelled (void) - all the bets for this Jackpot round are cancelled and stakes are refunded.</p>
+<p>GoalRush pick 
+By choosing the “ GoalRush pick” option, a random selection of one prediction per match will be automatically selected with a fixed stake of NGN 100. Further predictions may be added to the random selection. This will increase the cost of entry by NGN 100 for every additional combination.</p>
+    </div>
+  </div>
+
+  <div class="combination-stake">
+    <div>Combination: <span id="combination">0</span></div>
+    <div>Stake: <span id="stake">0</span></div>
+  </div>
+
+  <!-- Action buttons: GoalRush large above; Clear All and Place Bet side-by-side -->
+  <div class="action-buttons">
+    <div class="line-box green line-large" id="goalRushBtn" role="button">GoalRush Pick</div>
+
+    <div class="action-row" style="margin-top:8px">
+      <div class="line-box gray" id="clearAllBtn" role="button">Clear All</div>
+      <div id="placeBetBtn" class="line-box gray disabled" role="button">Place Bet</div>
+    </div>
+  </div>
+
+  <div class="slip-box" id="slipBox">
+    <h3>🎫 My Bets</h3>
+    <div id="slipContent"></div>
+  </div>
+
+  <!-- Withdraw modal -->
+  <div class="modal" id="withdrawModal" style="display:none;align-items:center;justify-content:center">
+    <div style="background:#111;padding:18px;border-radius:8px;">
+      <h3 style="color:yellow;margin:0 0 10px">Withdraw Funds</h3>
+      <input id="bankName" placeholder="Bank Name" style="width:100%;padding:8px;margin:6px 0;background:#222;border-radius:6px;border:none;color:#fff">
+      <input id="accountNumber" maxlength="10" placeholder="Account Number" style="width:100%;padding:8px;margin:6px 0;background:#222;border-radius:6px;border:none;color:#fff">
+      <input id="withdrawAmount" type="number" placeholder="Amount" style="width:100%;padding:8px;margin:6px 0;background:#222;border-radius:6px;border:none;color:#fff">
+      <div style="margin-top:8px;text-align:center">
+        <button onclick="processWithdrawal()" class="popup-ok" style="background:#2ea043">Submit</button>
+        <button onclick="closeWithdrawModal()" class="popup-ok" style="background:#f44336;margin-left:8px">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup -->
+  <div id="popupOverlay" class="popup-overlay" style="display:none;align-items:center">
+    <div class="popup-box">
+      <div id="popupMessage"><p>Message goes here</p></div>
+      <button id="popupOkBtn" class="popup-ok">OK</button>
+    </div>
+  </div>
+<!-- Confirm Overlay for placing bet -->
+<div id="confirmOverlay" class="popup-overlay" style="display:none;align-items:center">
+  <div class="popup-box">
+    <div id="confirmMessage"><p>Confirm to play</p></div>
+    <div style="margin-top:12px">
+      <button id="confirmCancel" class="popup-ok" style="background:#f44336">Cancel</button>
+      <button id="confirmYes" class="popup-ok" style="background:#2ea043;margin-left:8px">Confirm</button>
+    </div>
+    <div id="confirmLoader" style="display:none;margin-top:12px"><p>Placing bet...</p></div>
+  </div>
+</div>
+
+<!-- Delete Ticket Confirmation Overlay -->
+<div id="deleteOverlay" class="popup-overlay" style="display:none;align-items:center">
+  <div class="popup-box">
+    <div id="deleteMessage"><p>Are you sure you want to delete this ticket?</p></div>
+    <div style="margin-top:12px">
+      <button id="deleteCancel" class="popup-ok" style="background:#f44336">Cancel</button>
+      <button id="deleteConfirm" class="popup-ok" style="background:#2ea043;margin-left:8px">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- Action loader used for quick redirects (e.g. withdraw) -->
+<div id="actionLoader" style="display:none;position:fixed;left:0;top:0;width:100%;height:100%;background:rgba(0,0,0,.6);justify-content:center;align-items:center;z-index:99998">
+  <div style="background:#111;padding:14px;border-radius:8px;color:#fff">
+    <div id="actionLoaderText">Loading...</div>
+  </div>
+</div>
+
+
+
+<script>
+/* ------------------------
+   Utilities & core logic
+   ------------------------ */
+const qs = (sel, ctx=document) => ctx.querySelector(sel);
+const qsa = (sel, ctx=document) => Array.from((ctx||document).querySelectorAll(sel));
+
+/* Load balance (reads localStorage.users/currentUser) */
+function loadBalance(){
+  try{
+    const cur = localStorage.getItem('currentUser');
+    const users = JSON.parse(localStorage.getItem('users') || '{}');
+    if(cur && users[cur]) qs('#balance').textContent = 'NGN ' + Number(users[cur].balance || 0).toFixed(2);
+    else qs('#balance').textContent = 'NGN 0.00';
+  }catch(err){
+    console.warn('loadBalance error', err);
+    if(qs('#balance')) qs('#balance').textContent = 'NGN 0.00';
+  }
+}
+
+/* Profile image change */
+function changeProfile(ev){
+  const f = ev.target.files && ev.target.files[0];
+  if(!f) return;
+  const r = new FileReader();
+  r.onload = e => { if(qs('#profileImage')) qs('#profileImage').src = e.target.result; };
+  r.readAsDataURL(f);
+}
+
+function logout(){ localStorage.removeItem('currentUser'); window.location.href = 'index.html'; }
+
+/* Withdraw modal */
+function openWithdrawModal(){ const m = qs('#withdrawModal'); if(m) m.style.display = 'flex'; }
+function closeWithdrawModal(){ const m = qs('#withdrawModal'); if(m) m.style.display = 'none'; }
+
+function processWithdrawal(){
+  const bank = qs('#bankName') ? qs('#bankName').value.trim() : '';
+  const account = qs('#accountNumber') ? qs('#accountNumber').value.trim() : '';
+  const amount = Number(qs('#withdrawAmount') ? qs('#withdrawAmount').value : 0);
+  const cur = localStorage.getItem('currentUser');
+  const users = JSON.parse(localStorage.getItem('users') || '{}');
+  if(!bank || !account || account.length < 6 || !amount || amount <= 0){ showPopup('Please fill all withdrawal fields correctly.'); return; }
+  if(!cur || !users[cur]){ showPopup('No user logged in.'); return; }
+  if(Number(users[cur].balance || 0) < amount){ showPopup('Insufficient balance.'); return; }
+  users[cur].balance = Number(users[cur].balance) - amount;
+  localStorage.setItem('users', JSON.stringify(users));
+  loadBalance();
+  const code = Math.random().toString(36).substring(2,8).toUpperCase();
+  const withdrawals = JSON.parse(localStorage.getItem('withdrawals') || '[]');
+  withdrawals.push({user:cur,amount,bank,account,code});
+  localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
+  closeWithdrawModal();
+  showPopup('Withdrawal request submitted. Reference: ' + code);
+}
+
+/* ------------------------
+   Countdown (restored)
+   supports:
+    - { days,hours,minutes,seconds } in localStorage.countdown
+    - { target: ISOstring } or { targetMs: number }
+   If none present the countdown is hidden.
+   ------------------------ */
+let __countdownInterval = null;
+function startCountdown(){
+  // clear existing
+  if(__countdownInterval) { clearInterval(__countdownInterval); __countdownInterval = null; }
+  const raw = localStorage.getItem('countdown');
+  if(!raw) {
+    // hide countdown row if you want (but keep visible with zeros)
+    // qs('#countdownRow').style.display = 'none';
+    return;
+  }
+  let cfg = null;
+  try { cfg = JSON.parse(raw); } catch(e){ console.warn('Invalid countdown in localStorage'); return; }
+  let totalSeconds = 0;
+
+  if(cfg && (cfg.target || cfg.targetMs)) {
+    // use target timestamp
+    const t = cfg.target ? Date.parse(cfg.target) : Number(cfg.targetMs);
+    if(!isNaN(t)) {
+      const diff = Math.floor((t - Date.now())/1000);
+      totalSeconds = Math.max(0, diff);
+    } else {
+      console.warn('Invalid countdown target format');
+      return;
+    }
+  } else if(cfg && (cfg.days || cfg.hours || cfg.minutes || cfg.seconds)) {
+    const days = Number(cfg.days || 0), hours = Number(cfg.hours || 0), minutes = Number(cfg.minutes || 0), seconds = Number(cfg.seconds || 0);
+    totalSeconds = days*86400 + hours*3600 + minutes*60 + seconds;
+  } else if(cfg && cfg.totalSeconds) {
+    totalSeconds = Number(cfg.totalSeconds || 0);
+  } else {
+    return;
+  }
+
+  const dEl = qs('#d'), hEl = qs('#h'), mEl = qs('#m'), sEl = qs('#s');
+  function render(ts) {
+    const d = Math.floor(ts/86400);
+    const h = Math.floor((ts%86400)/3600);
+    const m = Math.floor((ts%3600)/60);
+    const s = ts%60;
+    if(dEl) dEl.textContent = String(d).padStart(2,'0');
+    if(hEl) hEl.textContent = String(h).padStart(2,'0');
+    if(mEl) mEl.textContent = String(m).padStart(2,'0');
+    if(sEl) sEl.textContent = String(s).padStart(2,'0');
+  }
+
+  render(totalSeconds);
+  __countdownInterval = setInterval(() => {
+    if(totalSeconds <= 0) { clearInterval(__countdownInterval); __countdownInterval = null; return; }
+    totalSeconds--;
+    render(totalSeconds);
+  }, 1000);
+}
+
+/* ------------------------
+   Popup (replaces alert)
+   showPopup(message, autoClose=false, onClose=null)
+   ------------------------ */
+function showPopup(message, autoClose=false, onClose=null){
+  const overlay = qs('#popupOverlay');
+  const msg = qs('#popupMessage');
+  const ok = qs('#popupOkBtn');
+  if(!overlay || !msg || !ok){
+    alert(message);
+    if(typeof onClose === 'function') onClose();
+    return;
+  }
+  msg.innerHTML = '<p>' + message + '</p>';
+  overlay.style.display = 'flex';
+  ok.focus();
+
+  function closeAnd() {
+    overlay.style.display = 'none';
+    ok.removeEventListener('click', closeAnd);
+    if(typeof onClose === 'function') onClose();
+  }
+
+  ok.addEventListener('click', closeAnd);
+  if(autoClose){
+    setTimeout(() => { if(overlay.style.display === 'flex') closeAnd(); }, 1000);
+  }
+}
+
+/* ------------------------
+   Tabs (guarded)
+   ------------------------ */
+function initTabs(){
+  qsa('.tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      qsa('.tab').forEach(t => t.classList.remove('active'));
+      qsa('.section').forEach(s => s.classList.remove('active'));
+      tab.classList.add('active');
+      const target = tab.dataset.section;
+      const sec = document.getElementById(target);
+      if(sec) sec.classList.add('active');
+      else console.warn('Tab target missing:', target);
+    });
+  });
+}
+
+/* ------------------------
+   Option toggles (delegated)
+   ------------------------ */
+function initOptionToggles(){
+  const goalrush = qs('#goalrush');
+  if(!goalrush) { console.warn('goalrush container missing'); return; }
+  goalrush.addEventListener('click', (e) => {
+    const btn = e.target.closest('button');
+    if(!btn) return;
+    const opt = btn.parentElement;
+    if(!opt || !opt.classList.contains('options')) return;
+    btn.classList.toggle('active');
+    updateCombinationStake();
+  });
+}
+
+/* ------------------------
+   combination and stake logic
+   ------------------------ */
+function updateCombinationStake(){
+  const matches = qsa('#goalrush .match');
+  let combination = 1;
+  let allSelected = true;
+  for(const m of matches){
+    const cnt = m.querySelectorAll('.options button.active').length;
+    if(cnt === 0){ allSelected = false; combination = 0; break; }
+    combination *= cnt;
+  }
+  if(qs('#combination')) qs('#combination').textContent = combination;
+  if(qs('#stake')) qs('#stake').textContent = (combination * 100);
+  window._currentCombination = combination;
+  window._currentStake = combination * 100;
+  window._allSelected = allSelected;
+  const placeBtn = qs('#placeBetBtn');
+  if(placeBtn){
+    if(allSelected && combination > 0){ placeBtn.classList.remove('disabled','gray'); placeBtn.classList.add('green'); }
+    else { placeBtn.classList.add('disabled','gray'); placeBtn.classList.remove('green'); }
+  }
+}
+
+/* ------------------------
+   goalRushPick, clearAll, placeBet
+   ------------------------ */
+function goalRushPick(){
+  clearAll();
+  qsa('#goalrush .match').forEach(m => {
+    const buttons = m.querySelectorAll('.options button');
+    if(buttons.length){
+      const r = Math.floor(Math.random()*buttons.length);
+      buttons[r].classList.add('active');
+    }
+  });
+  updateCombinationStake();
+}
+
+function clearAll(){
+  qsa('#goalrush .options button').forEach(b => b.classList.remove('active'));
+  updateCombinationStake();
+}
+
+function placeBet() {
+  const btn = qs('#placeBetBtn');
+  if(btn && btn.classList.contains('disabled')) return;
+  updateCombinationStake();
+  if(!window._allSelected || window._currentCombination === 0){ showPopup('You must make at least one selection for each of the 14 matches.'); return; }
+  const cur = localStorage.getItem('currentUser');
+  const users = JSON.parse(localStorage.getItem('users') || '{}');
+  if(!cur || !users[cur]){ showPopup('No user logged in.'); return; }
+  const balance = Number(users[cur].balance || 0);
+  const stake = Number(window._currentStake || 0);
+  if(balance < stake || stake === 0){
+    showPopup('Insufficient funds. Redirecting to deposit...', true, () => { window.location.href = 'transfer.html'; });
+    setTimeout(() => { window.location.href = 'transfer.html'; }, 1200);
+    return;
+  }
+
+  // show confirm overlay
+  const overlay = qs('#confirmOverlay');
+  if(!overlay){ // fallback to immediate place
+    performPlaceBetSave();
+    return;
+  }
+  overlay.style.display = 'flex';
+  const cancelBtn = qs('#confirmCancel');
+  const yesBtn = qs('#confirmYes');
+  const loader = qs('#confirmLoader');
+  function cleanHandlers(){ cancelBtn.onclick = null; yesBtn.onclick = null; }
+  cancelBtn.onclick = function(){ overlay.style.display = 'none'; cleanHandlers(); };
+  yesBtn.onclick = function(){
+    loader.style.display = 'block';
+    cancelBtn.disabled = true;
+    yesBtn.disabled = true;
+    setTimeout(()=>{
+      try{ performPlaceBetSave(); }catch(e){ console.error('performPlaceBetSave error', e); }
+      loader.style.display = 'none';
+      overlay.style.display = 'none';
+      cancelBtn.disabled = false;
+      yesBtn.disabled = false;
+      cleanHandlers();
+    }, 1000);
+  };
+
+}
+
+
+/* ------------------------
+   slip functions
+   ------------------------ */
+function showSlip() {
+  const c = qs('#slipContent');
+  if(!c) return;
+  c.innerHTML = '';
+  const tickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+  tickets.forEach((t,i) => {
+    const div = document.createElement('div');
+    div.style.marginBottom = '12px';
+    div.style.padding = '8px';
+    div.style.background = '#0b0b0b';
+    div.style.border = '1px solid #333';
+    div.style.borderRadius = '6px';
+    const created = new Date(t.created).toLocaleString();
+    const header = document.createElement('div');
+    header.innerHTML = `<strong>Ticket ${i+1}</strong> - ${created}<div style="float:right"><button data-ticket-index="${i}" class="ticket-delete-btn" style="background:transparent;border:1px solid #666;color:#fff;padding:4px 8px;border-radius:4px;cursor:pointer">Delete</button></div><div style="clear:both"></div>`;
+    const body = document.createElement('div');
+    body.style.marginTop = '8px';
+    const lines = (Array.isArray(t.selections) ? t.selections : []).map(sel => {
+      const mIdx = sel.matchIndex || '';
+      const teams = sel.teams || '';
+      const code = sel.code || '';
+      return `<div style="padding:6px 0;border-bottom:1px dashed #222;display:flex;gap:8px;align-items:center"><div style="width:28px">${mIdx}.</div><div style="flex:1">${teams}</div><div style="min-width:48px;text-align:right"><strong>${code}</strong></div></div>`;
+    }).join('');
+    body.innerHTML = `<div>Combination: <strong>${t.combination}</strong> | Stake: <strong>NGN ${t.stake}</strong></div><div style="margin-top:8px">${lines}</div>`;
+    div.appendChild(header);
+    div.appendChild(body);
+    c.appendChild(div);
+  });
+  // attach delete handlers
+  const dels = document.querySelectorAll('.ticket-delete-btn');
+  dels.forEach(btn => {
+    btn.onclick = function(){
+      const idx = Number(btn.getAttribute('data-ticket-index'));
+      // show delete overlay and store pending index
+      window.__pendingDeleteIndex = idx;
+      const dOv = qs('#deleteOverlay');
+      if(dOv) dOv.style.display = 'flex';
+    };
+  });
+
+}
+
+
+function toggleSlip(){
+  const box = qs('#slipBox');
+  if(!box) return;
+  box.style.display = (box.style.display === 'block') ? 'none' : 'block';
+  showSlip();
+}
+
+
+/* ------------------------
+   Additional helpers (tickets, delete confirm, withdraw redirect)
+   ------------------------ */
+function picksToCode(picks){
+  if(!Array.isArray(picks)) return '';
+  const set = new Set(picks.map(p => (p||'').toString().toLowerCase()));
+  const h = set.has('home'), d = set.has('draw'), a = set.has('away');
+  if(h && d && a) return '1x2';
+  if(h && d) return '1x';
+  if(d && a) return 'x2';
+  if(h && a) return '12';
+  if(h) return '1';
+  if(d) return 'x';
+  if(a) return '2';
+  return '';
+}
+
+/* Actual save/deduct/refresh after confirm */
+function performPlaceBetSave() {
+  const cur = localStorage.getItem('currentUser');
+  const users = JSON.parse(localStorage.getItem('users') || '{}');
+  if(!cur || !users[cur]){ showPopup('No user logged in.'); return; }
+  const stake = Number(window._currentStake || 0);
+
+  // Always read existing tickets array and push new ticket
+  let tickets = [];
+  try { tickets = JSON.parse(localStorage.getItem('tickets') || '[]'); } catch(e){ tickets = []; }
+
+  const selections = [];
+  qsa('#goalrush .match').forEach((m, idx) => {
+    const teamsEl = m.querySelector('.teams') || m.querySelector('div:not(.options)');
+    const teamsT = teamsEl ? teamsEl.innerText.trim() : `Match ${idx+1}`;
+    const picks = Array.from(m.querySelectorAll('.options button.active')).map(b => b.innerText.trim());
+    const code = picksToCode(picks);
+    selections.push({matchIndex: idx+1, teams: teamsT, picks, code});
+  });
+
+  tickets.push({
+    created: new Date().toISOString(),
+    selections: selections,
+    combination: window._currentCombination,
+    stake: stake
+  });
+
+  localStorage.setItem('tickets', JSON.stringify(tickets));
+
+  users[cur].balance = Number(users[cur].balance || 0) - stake;
+  localStorage.setItem('users', JSON.stringify(users));
+
+  loadBalance();
+  showSlip();
+  clearAll();
+  showPopup('✅ Bet placed successfully!', true);
+}
+
+
+/* delete overlay handlers */
+window.__pendingDeleteIndex = null;
+function initDeleteOverlayHandlers(){
+  const cancel = qs('#deleteCancel');
+  const confirm = qs('#deleteConfirm');
+  if(cancel) cancel.onclick = function(){ window.__pendingDeleteIndex = null; const dOv = qs('#deleteOverlay'); if(dOv) dOv.style.display = 'none'; };
+  if(confirm) confirm.onclick = function(){
+    const idx = window.__pendingDeleteIndex;
+    if(idx === null || idx === undefined){ const dOv = qs('#deleteOverlay'); if(dOv) dOv.style.display = 'none'; return; }
+    const tickets = JSON.parse(localStorage.getItem('tickets') || '[]');
+    if(idx >= 0 && idx < tickets.length){ tickets.splice(idx,1); localStorage.setItem('tickets', JSON.stringify(tickets)); }
+    window.__pendingDeleteIndex = null;
+    const dOv = qs('#deleteOverlay'); if(dOv) dOv.style.display = 'none';
+    showSlip();
+  };
+}
+
+/* withdraw redirect with 2s loader */
+function withdrawRedirect(){
+  const loader = qs('#actionLoader');
+  if(!loader){ window.location.href = 'withdraw.html'; return; }
+  loader.style.display = 'flex';
+  qs('#actionLoaderText').textContent = 'Loading withdrawal...';
+  setTimeout(()=>{ loader.style.display = 'none'; window.location.href = 'withdraw.html'; }, 2000);
+}
+
+/* initialize delete overlay handlers immediately */
+initDeleteOverlayHandlers();
+/* ------------------------
+   init on load (single handler)
+   ------------------------ */
+window.addEventListener('load', () => {
+  try{
+    initTabs();
+    initOptionToggles();
+    // wire main buttons
+    const g = qs('#goalRushBtn'); if(g) g.addEventListener('click', goalRushPick);
+    const cl = qs('#clearAllBtn'); if(cl) cl.addEventListener('click', clearAll);
+    const p = qs('#placeBetBtn'); if(p) p.addEventListener('click', placeBet);
+    // popup OK already handled by showPopup's listener on demand
+    loadBalance();
+    startCountdown(); // RESTORED countdown
+    updateCombinationStake();
+    showSlip();
+  }catch(err){
+    console.error('Init error', err);
+  }
+});
+</script>
+</body>
+</html>
