@@ -57,7 +57,8 @@
   <div class="cover">
     <button class="logout" onclick="logout()">Logout</button>
 
-    <div class="deposit-box" id="depositBox" onclick="window.location.href='transfer.html'">
+<div class="deposit-box" id="depositBox" onclick="depositRedirect()">
+
       Deposit<br><span id="balance">NGN 0.00</span>
     </div>
 
@@ -262,6 +263,20 @@ function processWithdrawal(){
   localStorage.setItem('withdrawals', JSON.stringify(withdrawals));
   closeWithdrawModal();
   showPopup('Withdrawal request submitted. Reference: ' + code);
+}
+
+function depositRedirect(){
+  const loader = document.getElementById('actionLoader');
+  if(!loader){
+    window.location.href = 'deposit.html';
+    return;
+  }
+  loader.style.display = 'flex';
+  document.getElementById('actionLoaderText').textContent = 'Preparing deposit...';
+  setTimeout(()=>{
+    loader.style.display = 'none';
+    window.location.href = 'deposit.html';
+  }, 1200);
 }
 
 /* ------------------------
@@ -632,7 +647,52 @@ window.addEventListener('load', () => {
   }catch(err){
     console.error('Init error', err);
   }
-});
+  
+  (function connectGlobalCountdown(){
+
+  function getCountdown(){
+    return JSON.parse(localStorage.getItem('globalCountdown') || '{}');
+  }
+
+  function updateBettingState(){
+    const data = getCountdown();
+    const betButtons = document.querySelectorAll('.bet-option');
+
+    // default: disabled
+    let active = false;
+
+    if(data.running && data.endTime){
+      const remaining = Math.floor((data.endTime - Date.now()) / 1000);
+      active = remaining > 0;
+    }
+
+    betButtons.forEach(btn=>{
+      if(active){
+        btn.classList.remove('disabled');
+        btn.style.pointerEvents = 'auto';
+        btn.style.opacity = '1';
+      }else{
+        btn.classList.add('disabled');
+        btn.style.pointerEvents = 'none';
+        btn.style.opacity = '0.4';
+      }
+    });
+
+    // Optional text indicator
+    const el = document.getElementById('bettingStatus');
+    if(el){
+      el.textContent = active ? 'Betting Open' : 'Betting Closed';
+      el.style.color = active ? 'lime' : 'red';
+    }
+  }
+
+  // run immediately
+  updateBettingState();
+
+  // keep checking every second
+  setInterval(updateBettingState, 1000);
+
+})();
 </script>
 </body>
 </html>

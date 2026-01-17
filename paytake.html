@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Complete Payment</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{background:#fff;color:#000;font-family:Arial;text-align:center;margin:0}
+.box{margin-top:60px}
+.countdown{font-size:22px;color:black;margin:15px}
+button{padding:12px 20px;border:none;border-radius:6px;font-weight:bold}
+.confirm{background:#2ea043;color:#fff}
+.home{background:#444;color:#fff}
+</style>
+</head>
+
+<body>
+
+<div class="box" id="paymentBox">
+  <h2>PAYTAKE</h2>
+  <p>Make Transfer to</p>
+  <p><strong>2040541530</strong></p>
+  <p>Kuda Bank</p>
+  <p>Victor Mmeri</p>
+
+  <div class="countdown" id="timer">25:10</div>
+
+  <button class="confirm" onclick="confirmPayment()">Confirm Payment</button>
+</div>
+
+<script>
+let time = 25 * 60 + 10;
+let used = false;
+
+function tick(){
+  if(time <= 0) return;
+  time--;
+  const m = String(Math.floor(time/60)).padStart(2,'0');
+  const s = String(time%60).padStart(2,'0');
+  document.getElementById('timer').innerText = `${m}:${s}`;
+}
+setInterval(tick,1000);
+
+function confirmPayment(){
+  used = true;
+  const phone = '2348098740140'; // change anytime
+  const msg = encodeURIComponent(
+    'I have made payment, I will send the receipt now.'
+  );
+  window.open(`https://wa.me/${phone}?text=${msg}`,'_blank');
+}
+
+window.addEventListener('focus',()=>{
+  if(!used) return;
+  document.getElementById('paymentBox').innerHTML = `
+    <h2 style="color:yellow">Payment Under Review</h2>
+    <p>Your payment is being reviewed.</p>
+    <button class="home" onclick="goHome()">Back to Home</button>
+  `;
+});
+
+function goHome(){
+  window.location.href = 'dashboard.html';
+}
+</script>
+
+</body>
+</html>

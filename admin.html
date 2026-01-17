@@ -1,447 +1,213 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Panel - GoalRush Jackpot</title>
-  <style>
-    body {
-      margin: 0;
-      font-family: "Segoe UI", Tahoma, sans-serif;
-      background: #0d1117;
-      color: #f0f0f0;
-    }
+<meta charset="UTF-8">
+<title>Admin Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{margin:0;font-family:Arial;background:#000;color:#fff}
+.tabs{display:flex;background:#111}
+.tabs button{flex:1;padding:14px;border:none;background:#111;color:#fff;font-weight:bold}
+.tabs button.active{background:#2ea043}
+.section{display:none;padding:15px}
+.section.active{display:block}
+input,select{width:100%;padding:10px;margin:6px 0;background:#222;border:none;border-radius:6px;color:#fff}
+button.action{padding:10px;border:none;border-radius:6px;margin:4px 0;font-weight:bold}
+.green{background:#2ea043}
+.red{background:#f44336}
+.orange{background:#ff9800;color:#000}
+.list{margin-top:10px;font-size:14px}
+.card{background:#111;padding:10px;border-radius:6px;margin-bottom:6px}
+</style>
+</head>
 
-    header {
-      background: #161b22;
-      padding: 15px;
-      text-align: center;
-      font-size: 22px;
-      font-weight: bold;
-      color: #ffd700;
-      border-bottom: 2px solid #30363d;
-    }
+<body>
 
-    .container {
-      padding: 20px;
-    }
+<div class="tabs">
+  <button class="active" onclick="openTab('users')">Users</button>
+  <button onclick="openTab('withdrawals')">Withdrawals</button>
+  <button onclick="openTab('logs')">Audit Logs</button>
+  <button onclick="openTab('countdown')">Countdown</button>
+</div>
 
-    /* Tabs */
-    .tabs {
-      display: flex;
-      border-bottom: 2px solid #30363d;
-      margin-bottom: 15px;
-    }
+<!-- USERS -->
+<div id="users" class="section active">
+  <h3>Users</h3>
+  <input id="searchPhone" placeholder="Search phone number">
+  <button class="action green" onclick="searchUser()">Search</button>
 
-    .tab {
-      flex: 1;
-      padding: 12px;
-      text-align: center;
-      cursor: pointer;
-      background: #161b22;
-      color: #f0f0f0;
-      transition: background 0.3s;
-    }
+  <div id="userResult"></div>
+</div>
 
-    .tab.active {
-      background: #21262d;
-      border-bottom: 3px solid #ffd700;
-      font-weight: bold;
-    }
+<!-- WITHDRAWALS -->
+<div id="withdrawals" class="section">
+  <h3>Withdrawals</h3>
+  <div id="withdrawList"></div>
+</div>
 
-    .tab:hover {
-      background: #1c1f26;
-    }
+<!-- AUDIT LOGS -->
+<div id="logs" class="section">
+  <h3>Audit Logs</h3>
+  <button class="action red" onclick="clearLogs()">Clear Logs</button>
+  <div id="logList"></div>
+</div>
 
-    .tab-content {
-      display: none;
-      padding: 10px;
-    }
+<!-- COUNTDOWN -->
+<div id="countdown" class="section">
+  <h3>Global Countdown</h3>
 
-    .tab-content.active {
-      display: block;
-    }
+  <input id="days" type="number" placeholder="Days">
+  <input id="hours" type="number" placeholder="Hours">
+  <input id="minutes" type="number" placeholder="Minutes">
+  <input id="seconds" type="number" placeholder="Seconds">
 
-    /* Table */
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 15px;
-    }
+  <button class="action green" onclick="startCountdown()">Start</button>
+  <button class="action red" onclick="resetCountdown()">Reset</button>
 
-    th, td {
-      padding: 10px;
-      border-bottom: 1px solid #30363d;
-      text-align: left;
-    }
+  <p id="countdownStatus" style="color:yellow;margin-top:10px"></p>
+</div>
 
-    tr:hover {
-      background: #1c1f26;
-    }
+<script>
+function openTab(id){
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  event.target.classList.add('active');
 
-    th {
-      color: #ffd700;
-    }
-
-    /* Buttons */
-  button {
-  padding: 5px 10px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: 0.3s;
-  font-size: 14px;
-  margin-top: 20px;
-  width: 100%;
+  if(id==='withdrawals') loadWithdrawals();
+  if(id==='logs') loadLogs();
+  if(id==='countdown') showCountdownStatus();
 }
 
+/* ---------- USERS ---------- */
+function searchUser(){
+  const phone = document.getElementById('searchPhone').value.trim();
+  const users = JSON.parse(localStorage.getItem('users') || '{}');
+  const box = document.getElementById('userResult');
+  box.innerHTML = '';
 
-    .fund-btn { background: #2ea043; color: #fff; }
-    .clear-btn { background: #f85149; color: #fff; float: right; }
-    .disable-btn { background: #8b949e; color: #fff; }
-    .fund-btn:hover { background: #3fb950; }
-    .clear-btn:hover { background: #ff6b6b; }
-    .disable-btn:hover { background: #999; }
+  if(!users[phone]){
+    box.innerHTML = '<p>User not found</p>';
+    return;
+  }
 
-    /* Search */
-    .search-box {
-      margin: 10px 0;
-      display: flex;
-      justify-content: flex-end;
-    }
+  const u = users[phone];
+  box.innerHTML = `
+    <div class="card">
+      <p><b>${phone}</b></p>
+      <p>Balance: ₦${(u.balance||0).toLocaleString()}</p>
+      <p>Status: ${u.status}</p>
 
-    .search-box input {
-      padding: 8px;
-      border-radius: 4px;
-      border: 1px solid #30363d;
-      background: #0d1117;
-      color: #f0f0f0;
-    }
+      <input id="fundAmount" type="number" placeholder="Fund amount">
+      <button class="action green" onclick="fundUser('${phone}')">Fund</button>
 
-    /* Modal */
-    .modal {
-      display: none;
-      position: fixed;
-      z-index: 10;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(0,0,0,0.7);
-      justify-content: center;
-      align-items: center;
-      animation: fadeIn 0.5s ease;
-    }
+      <button class="action orange" onclick="toggleUser('${phone}')">
+        ${u.status==='active'?'Disable':'Enable'}
+      </button>
 
-    .modal-content {
-      background: #161b22;
-      padding: 20px;
-      border-radius: 8px;
-      width: 300px;
-      text-align: center;
-      transform: scale(0.8);
-      animation: popIn 0.5s forwards;
-    }
-
-    .modal input {
-      width: 90%;
-      padding: 8px;
-      margin: 8px 0;
-      border: 1px solid #30363d;
-      border-radius: 4px;
-      background: #0d1117;
-      color: #f0f0f0;
-    }
-
-    .close {
-      float: right;
-      font-size: 20px;
-      cursor: pointer;
-      color: #fff;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    @keyframes popIn {
-      to { transform: scale(1); }
-    }
-
-    /* Countdown Settings */
-    .countdown-settings {
-      display: grid;
-      grid-template-columns: repeat(4px, 1fr);
-      gap: 10px;
-      margin-top: 15px;
-    }
-
-    .countdown-settings input {
-      text-align: center;
-    }
-
-    .action-btns {
-      margin-top: 10px;
-    }
-    
-   /* Login Screen */
-    #loginScreen {
-      position: fixed; inset: 0;
-      background: #0b2e13;
-      display: flex; justify-content: center; align-items: center;
-      flex-direction: column; color: #ffd700;
-      z-index: 3000;
-    }
-    #loginScreen input {
-      padding: 8px; margin: 6px;
-      border-radius: 5px; border: 1px solid #ccc;
-      width: 250px; font-size: 14px;
-    }
-    #loginScreen button {
-      margin-top: 10px; padding: 8px 16px;
-      background: #229954; border: none;
-      color: white; border-radius: 5px;
-      cursor: pointer;
-    } 
-    
-  </style>
-</head>
-<body>
-  <!-- LOGIN SCREEN -->
-  <div id="loginScreen">
-    <h2>🔐 Admin Login</h2>
-    <input type="text" id="adminUser" placeholder="Username">
-    <input type="password" id="adminPass" placeholder="Password">
-    <button onclick="checkLogin()">Login</button>
-    <p id="loginError" style="color:red; display:none;">Invalid credentials</p>
-  </div>
-  
-  <header>⚙️ Admin Panel - GoalRush Jackpot</header>
-  <div class="container">
-    <!-- Tabs -->
-    <div class="tabs">
-      <div class="tab active" onclick="openTab('users')">👤 Users</div>
-      <div class="tab" onclick="openTab('withdrawals')">💸 Withdrawals</div>
-      <div class="tab" onclick="openTab('logs')">📜 Audit Logs</div>
-      <div class="tab" onclick="openTab('countdown')">⏳ Countdown</div>
+      <button class="action red" onclick="clearUser('${phone}')">Clear User</button>
     </div>
+  `;
+}
 
-    <!-- Users Tab -->
-    <div id="users" class="tab-content active">
-      <div class="search-box">
-        <input type="text" id="searchUser" placeholder="Search by phone...">
+function fundUser(phone){
+  const amt = Number(document.getElementById('fundAmount').value);
+  if(amt<=0) return alert('Invalid amount');
+
+  const users = JSON.parse(localStorage.getItem('users'));
+  users[phone].balance = (users[phone].balance||0) + amt;
+  localStorage.setItem('users', JSON.stringify(users));
+
+  logAction(`Funded ${phone} with ₦${amt}`);
+  alert('User funded');
+  searchUser();
+}
+
+function toggleUser(phone){
+  const users = JSON.parse(localStorage.getItem('users'));
+  users[phone].status = users[phone].status==='active'?'disabled':'active';
+  localStorage.setItem('users', JSON.stringify(users));
+  logAction(`User ${phone} status changed`);
+  searchUser();
+}
+
+function clearUser(phone){
+  const users = JSON.parse(localStorage.getItem('users'));
+  delete users[phone];
+  localStorage.setItem('users', JSON.stringify(users));
+  logAction(`User ${phone} cleared`);
+  document.getElementById('userResult').innerHTML='';
+}
+
+/* ---------- WITHDRAWALS ---------- */
+function loadWithdrawals(){
+  const w = JSON.parse(localStorage.getItem('withdrawals') || '[]');
+  const box = document.getElementById('withdrawList');
+  box.innerHTML = w.length?'' : '<p>No withdrawals</p>';
+
+  w.forEach(x=>{
+    box.innerHTML += `
+      <div class="card">
+        <p>${x.phone}</p>
+        <p>₦${x.amount}</p>
+        <p>${x.bankName}</p>
+        <p>Status: ${x.status}</p>
       </div>
-      <table id="usersTable">
-        <thead>
-          <tr>
-            <th>Phone</th>
-            <th>Balance</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+    `;
+  });
+}
 
-    <!-- Withdrawals Tab -->
-    <div id="withdrawals" class="tab-content">
-      <table id="withdrawalsTable">
-        <thead>
-          <tr>
-            <th>User</th>
-            <th>Amount</th>
-            <th>Bank</th>
-            <th>Account</th>
-            <th>Security Code</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+/* ---------- AUDIT LOGS ---------- */
+function logAction(action){
+  const logs = JSON.parse(localStorage.getItem('auditLogs') || '[]');
+  logs.push({time:new Date().toLocaleString(),action});
+  localStorage.setItem('auditLogs', JSON.stringify(logs));
+}
 
-    <!-- Logs Tab -->
-    <div id="logs" class="tab-content">
-      <table id="logsTable">
-        <thead>
-          <tr>
-            <th>Time</th>
-            <th>Action</th>
-            <th>User</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
-    </div>
+function loadLogs(){
+  const logs = JSON.parse(localStorage.getItem('auditLogs') || '[]');
+  const box = document.getElementById('logList');
+  box.innerHTML = logs.length?'' : '<p>No logs</p>';
 
-    <!-- Countdown Tab -->
-    <div id="countdown" class="tab-content">
-      <h3>Manage Countdown</h3>
-      <div class="countdown-settings">
-        <input type="number" id="days" placeholder="Days">
-        <input type="number" id="hours" placeholder="Hours">
-        <input type="number" id="minutes" placeholder="Minutes">
-        <input type="number" id="seconds" placeholder="Seconds">
-      </div>
-      <div class="action-btns">
-        <button class="fund-btn" onclick="startCountdown()">Start</button>
-        <button class="clear-btn" onclick="resetCountdown()">Reset</button>
-      </div>
-    </div>
-  </div>
+  logs.forEach(l=>{
+    box.innerHTML += `<div class="card">${l.time} — ${l.action}</div>`;
+  });
+}
 
-  <!-- Modal -->
-  <div class="modal" id="modal">
-    <div class="modal-content">
-      <span class="close" onclick="closeModal()">&times;</span>
-      <h3 id="modalTitle">Action</h3>
-      <input type="number" id="amountInput" placeholder="Enter Amount">
-      <button class="fund-btn" onclick="confirmAction()">Submit</button>
-    </div>
-  </div>
+function clearLogs(){
+  localStorage.removeItem('auditLogs');
+  loadLogs();
+}
 
-  <script>
-    let currentUserAction = null;
-    let selectedUser = null;
+/* ---------- COUNTDOWN ---------- */
+function startCountdown(){
+  const d = +days.value||0, h=+hours.value||0, m=+minutes.value||0, s=+seconds.value||0;
+  const total = (((d*24+h)*60+m)*60+s);
+  if(total<=0) return alert('Invalid time');
 
- // Admin login
-    function checkLogin(){
-      const u=document.getElementById("adminUser").value;
-      const p=document.getElementById("adminPass").value;
-      if(u==="GoalRush Jackpot" && p==="*242777Aa#"){
-        document.getElementById("loginScreen").style.display="none";
-        document.getElementById("adminPanel").style.display="block";
-      }else{
-        document.getElementById("loginError").style.display="block";
-      }
-    }
+  const endTime = Date.now() + total*1000;
+  localStorage.setItem('globalCountdown', JSON.stringify({endTime,running:true}));
+  logAction('Countdown started');
+  showCountdownStatus();
+}
 
-    // Tabs
-    function openTab(tabId) {
-      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-      document.querySelector(`.tab[onclick="openTab('${tabId}')"]`).classList.add('active');
-      document.getElementById(tabId).classList.add('active');
-    }
+function resetCountdown(){
+  localStorage.setItem('globalCountdown', JSON.stringify({endTime:0,running:false}));
+  logAction('Countdown reset');
+  showCountdownStatus();
+}
 
-    // Modal
-    function openModal(action, user) {
-      currentUserAction = action;
-      selectedUser = user;
-      document.getElementById("modalTitle").textContent = action + " for " + user;
-      document.getElementById("modal").style.display = "flex";
-    }
+function showCountdownStatus(){
+  const data = JSON.parse(localStorage.getItem('globalCountdown') || '{}');
+  const el = document.getElementById('countdownStatus');
+  if(!data.running || !data.endTime){
+    el.innerText = 'Countdown stopped';
+    return;
+  }
+  const diff = Math.max(0, Math.floor((data.endTime-Date.now())/1000));
+  el.innerText = diff>0 ? 'Countdown running' : 'Countdown ended';
+}
+</script>
 
-    function closeModal() {
-      document.getElementById("modal").style.display = "none";
-      document.getElementById("amountInput").value = "";
-    }
-
-    function confirmAction() {
-      const amount = parseFloat(document.getElementById("amountInput").value);
-      const users = JSON.parse(localStorage.getItem("users")) || {};
-      if (!users[selectedUser]) return;
-
-      if (currentUserAction === "Fund") {
-        users[selectedUser].balance += amount;
-        addLog("Funded " + amount, selectedUser);
-      } else if (currentUserAction === "Clear") {
-        users[selectedUser].balance = 0;
-        addLog("Cleared funds", selectedUser);
-      } else if (currentUserAction === "Disable") {
-        users[selectedUser].disabled = true;
-        addLog("Disabled account", selectedUser);
-      }
-
-      localStorage.setItem("users", JSON.stringify(users));
-      loadUsers();
-      closeModal();
-    }
-
-    // Load Users
-    function loadUsers() {
-      const users = JSON.parse(localStorage.getItem("users")) || {};
-      const tbody = document.querySelector("#usersTable tbody");
-      tbody.innerHTML = "";
-      Object.keys(users).forEach(phone => {
-        const u = users[phone];
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td>${phone}</td>
-          <td>NGN ${parseFloat(u.balance || 0).toFixed(2)}</td>
-          <td>${u.disabled ? "❌ Disabled" : "✅ Active"}</td>
-          <td>
-            <button class="fund-btn" onclick="openModal('Fund','${phone}')">Fund</button>
-            <button class="disable-btn" onclick="openModal('Disable','${phone}')">Disable</button>
-            <button class="clear-btn" onclick="openModal('Clear','${phone}')">Clear</button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Search Users
-    document.getElementById("searchUser").addEventListener("keyup", function() {
-      const val = this.value.toLowerCase();
-      document.querySelectorAll("#usersTable tbody tr").forEach(row => {
-        row.style.display = row.innerText.toLowerCase().includes(val) ? "" : "none";
-      });
-    });
-
-    // Logs
-    function addLog(action, user) {
-      const logs = JSON.parse(localStorage.getItem("logs")) || [];
-      logs.push({time: new Date().toLocaleString(), action, user});
-      localStorage.setItem("logs", JSON.stringify(logs));
-      loadLogs();
-    }
-
-    function loadLogs() {
-      const logs = JSON.parse(localStorage.getItem("logs")) || [];
-      const tbody = document.querySelector("#logsTable tbody");
-      tbody.innerHTML = "";
-      logs.forEach(l => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${l.time}</td><td>${l.action}</td><td>${l.user}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Countdown
-    function startCountdown() {
-      const settings = {
-        days: +document.getElementById("days").value || 0,
-        hours: +document.getElementById("hours").value || 0,
-        minutes: +document.getElementById("minutes").value || 0,
-        seconds: +document.getElementById("seconds").value || 0,
-      };
-      localStorage.setItem("countdown", JSON.stringify(settings));
-      alert("Countdown Started!");
-    }
-
-    function resetCountdown() {
-      localStorage.removeItem("countdown");
-      alert("Countdown Reset!");
-    }
-
-    // Withdrawals (load if any)
-    function loadWithdrawals() {
-      const list = JSON.parse(localStorage.getItem("withdrawals")) || [];
-      const tbody = document.querySelector("#withdrawalsTable tbody");
-      tbody.innerHTML = "";
-      list.forEach(w => {
-        const tr = document.createElement("tr");
-        tr.innerHTML = `<td>${w.user}</td><td>${w.amount}</td><td>${w.bank}</td><td>${w.account}</td><td>${w.code}</td>`;
-        tbody.appendChild(tr);
-      });
-    }
-
-    window.onload = () => {
-      loadUsers();
-      loadLogs();
-      loadWithdrawals();
-    };
-  </script>
 </body>
 </html>

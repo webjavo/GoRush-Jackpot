@@ -1,273 +1,67 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Deposit - GoalRush Jackpot</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background: #f4f4f9;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-      margin: 0;
-    }
-
-    .deposit-box {
-      background: #fff;
-      padding: 25px;
-      border-radius: 12px;
-      box-shadow: 0 6px 16px rgba(0,0,0,0.15);
-      width: 320px;
-      text-align: center;
-    }
-
-    h2 {
-      margin-bottom: 20px;
-      color: #333;
-    }
-
-    .input-group {
-      margin-bottom: 15px;
-      text-align: left;
-    }
-
-    label {
-      font-weight: bold;
-      display: block;
-      margin-bottom: 5px;
-    }
-
-    input {
-      width: 100%;
-      padding: 10px;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 16px;
-    }
-
-    .btn-group {
-      display: flex;
-      justify-content: space-between;
-      margin-top: 20px;
-    }
-
-    button {
-      flex: 1;
-      margin: 0 5px;
-      padding: 12px;
-      font-size: 16px;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: background 0.3s ease;
-    }
-
-    .btn-cancel {
-      background: #ccc;
-      color: #333;
-    }
-
-    .btn-cancel:hover {
-      background: #bbb;
-    }
-
-    .btn-submit {
-      background: #28a745;
-      color: #fff;
-    }
-
-    .btn-submit:hover {
-      background: #218838;
-    }
-
-    .rate-info {
-      margin-top: 10px;
-      font-size: 14px;
-      color: #555;
-    }
-
-    /* Modal Styles */
-    .modal {
-      display: none;
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,0.6);
-      justify-content: center;
-      align-items: center;
-      z-index: 1000;
-    }
-
-    .modal-content {
-      background: #fff;
-      padding: 25px;
-      border-radius: 10px;
-      width: 300px;
-      text-align: center;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-      animation: fadeIn 0.3s ease-in-out;
-    }
-
-    .loading-spinner {
-      border: 4px solid #f3f3f3;
-      border-top: 4px solid #28a745;
-      border-radius: 50%;
-      width: 40px;
-      height: 40px;
-      margin: 15px auto;
-      animation: spin 1s linear infinite;
-    }
-
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: scale(0.9); }
-      to { opacity: 1; transform: scale(1); }
-    }
-
-    .modal-buttons {
-      margin-top: 20px;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    .modal-buttons button {
-      flex: 1;
-      margin: 0 5px;
-      padding: 10px;
-      border-radius: 6px;
-      border: none;
-      cursor: pointer;
-      font-size: 14px;
-    }
-
-    .ok-btn {
-      background: #28a745;
-      color: #fff;
-    }
-
-    .ok-btn:hover {
-      background: #218838;
-    }
-
-    .cancel-btn {
-      background: #ccc;
-      color: #333;
-    }
-
-    .cancel-btn:hover {
-      background: #bbb;
-    }
-  </style>
+<meta charset="UTF-8">
+<title>Deposit</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body{background:#000;color:#fff;font-family:Arial;margin:0}
+.box{max-width:360px;margin:60px auto;background:#111;padding:20px;border-radius:10px}
+input{width:100%;padding:12px;background:#222;border:none;border-radius:6px;color:#fff}
+button{width:100%;padding:12px;margin-top:10px;border:none;border-radius:6px;font-weight:bold}
+.deposit{background:#2ea043;color:#fff}
+.cancel{background:#f44336;color:#fff}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.7);align-items:center;justify-content:center}
+.popup{background:#111;padding:20px;border-radius:8px;text-align:center}
+</style>
 </head>
+
 <body>
 
-  <div class="deposit-box">
-    <h2>Deposit Funds</h2>
+<div class="box">
+  <h3 style="color:yellow">Deposit Funds</h3>
+  <input type="number" id="amount" placeholder="Enter amount (₦100 - ₦100,000,000)">
+  <button class="deposit" onclick="startDeposit()">Deposit</button>
+  <button class="cancel" onclick="goBack()">Cancel</button>
+</div>
 
-    <div class="input-group">
-      <label for="amountNaira">Amount (₦)</label>
-      <input type="number" id="amountNaira" placeholder="Enter amount in Naira" required>
-    </div>
-
-    <div class="input-group">
-      <label for="amountDollar">Equivalent ($)</label>
-      <input type="text" id="amountDollar" readonly>
-    </div>
-
-    <div class="rate-info" id="rateInfo">Fetching exchange rate...</div>
-
-    <div class="btn-group">
-      <button class="btn-cancel" onclick="cancelDeposit()">Cancel</button>
-      <button class="btn-submit" onclick="submitDeposit()">Submit</button>
-    </div>
+<div class="overlay" id="overlay">
+  <div class="popup">
+    <p id="popupText"></p>
+    <button class="deposit" onclick="confirmDeposit()">OK</button>
+    <button class="cancel" onclick="closePopup()">Cancel</button>
   </div>
+</div>
 
-  <!-- Modal -->
-  <div class="modal" id="paymentModal">
-    <div class="modal-content" id="modalContent">
-      <h3>Processing...</h3>
-      <div class="loading-spinner"></div>
-    </div>
-  </div>
+<script>
+function goBack(){
+  window.location.href = 'dashboard.html';
+}
 
-  <script>
-    let exchangeRate = 0.0012; // fallback NGN -> USD
-    const rateInfo = document.getElementById("rateInfo");
-    const nairaInput = document.getElementById("amountNaira");
-    const dollarInput = document.getElementById("amountDollar");
-    const modal = document.getElementById("paymentModal");
-    const modalContent = document.getElementById("modalContent");
+function startDeposit(){
+  const amount = Number(document.getElementById('amount').value);
+  if(amount < 100 || amount > 100000000){
+    alert('Amount must be between ₦100 and ₦100,000,000');
+    return;
+  }
 
-    // Fetch exchange rate
-    async function getExchangeRate() {
-      try {
-        const res = await fetch("https://open.er-api.com/v6/latest/NGN");
-        const data = await res.json();
-        if (data && data.rates && data.rates.USD) {
-          exchangeRate = data.rates.USD;
-          rateInfo.textContent = `1 NGN ≈ ${exchangeRate.toFixed(4)} USD (live rate)`;
-        } else {
-          rateInfo.textContent = `Using fallback rate (1 NGN ≈ ${exchangeRate} USD)`;
-        }
-      } catch {
-        rateInfo.textContent = `Using fallback rate (1 NGN ≈ ${exchangeRate} USD)`;
-      }
-    }
+  localStorage.setItem('pendingDepositAmount', amount);
 
-    // Convert input
-    nairaInput.addEventListener("input", () => {
-      const naira = parseFloat(nairaInput.value) || 0;
-      const usd = naira * exchangeRate;
-      dollarInput.value = `$ ${usd.toFixed(2)}`;
-    });
+  setTimeout(()=>{
+    document.getElementById('popupText').innerText =
+      `Proceed to pay ₦${amount.toLocaleString()}?`;
+    document.getElementById('overlay').style.display = 'flex';
+  },1000);
+}
 
-    // Cancel deposit → dashboard
-    function cancelDeposit() {
-      window.location.href = "dashboard.html";
-    }
+function closePopup(){
+  document.getElementById('overlay').style.display = 'none';
+}
 
-    // Submit deposit → show modal
-    function submitDeposit() {
-      const naira = parseFloat(nairaInput.value);
-      if (!naira || naira <= 0) {
-        alert("Please enter a valid amount in Naira.");
-        return;
-      }
+function confirmDeposit(){
+  window.location.href = 'Paytake.html';
+}
+</script>
 
-      modal.style.display = "flex";
-      modalContent.innerHTML = `
-        <h3>Processing...</h3>
-        <div class="loading-spinner"></div>
-      `;
-
-      setTimeout(() => {
-        modalContent.innerHTML = `
-          <h3>Proceed to pay ₦${naira.toFixed(2)} (~${dollarInput.value})</h3>
-          <div class="modal-buttons">
-            <button class="ok-btn" onclick="redirectPayment(${naira})">OK</button>
-            <button class="cancel-btn" onclick="reloadDeposit()">Cancel</button>
-          </div>
-        `;
-      }, 1000);
-    }
-
-    // Redirect to Paystake Titan (placeholder)
-    function redirectPayment(amount) {
-      window.location.href = "https://paystake-titan.example.com/checkout?amount=" + amount;
-    }
-
-    // Cancel inside modal → reload deposit page
-    function reloadDeposit() {
-      window.location.href = "deposit.html";
-    }
-
-    getExchangeRate();
-  </script>
 </body>
 </html>
