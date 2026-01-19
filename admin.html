@@ -2,210 +2,290 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Admin Panel</title>
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin Panel | GoalRush Jackpot</title>
+
 <style>
-body{margin:0;font-family:Arial;background:#000;color:#fff}
-.tabs{display:flex;background:#111}
-.tabs button{flex:1;padding:14px;border:none;background:#111;color:#fff;font-weight:bold}
-.tabs button.active{background:#2ea043}
-.section{display:none;padding:15px}
-.section.active{display:block}
-input,select{width:100%;padding:10px;margin:6px 0;background:#222;border:none;border-radius:6px;color:#fff}
-button.action{padding:10px;border:none;border-radius:6px;margin:4px 0;font-weight:bold}
-.green{background:#2ea043}
-.red{background:#f44336}
-.orange{background:#ff9800;color:#000}
-.list{margin-top:10px;font-size:14px}
-.card{background:#111;padding:10px;border-radius:6px;margin-bottom:6px}
+* {
+  box-sizing: border-box;
+  font-family: "Segoe UI", system-ui;
+}
+
+body {
+  margin: 0;
+  background: #020617;
+  color: #e5e7eb;
+}
+
+/* LOGIN */
+#login {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.login-box {
+  width: 340px;
+  background: #020617;
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 30px 60px rgba(0,0,0,.6);
+}
+
+.login-box h2 {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.login-box input, .login-box button {
+  width: 100%;
+  padding: 14px;
+  border-radius: 12px;
+  border: none;
+  margin-bottom: 14px;
+}
+
+.login-box input {
+  background: #0f172a;
+  color: #fff;
+}
+
+.login-box button {
+  background: linear-gradient(135deg,#22c55e,#16a34a);
+  font-weight: 600;
+}
+
+/* ADMIN */
+#admin {
+  display: none;
+}
+
+.header {
+  padding: 18px;
+  font-size: 20px;
+  font-weight: 600;
+  background: #020617;
+  border-bottom: 1px solid #1e293b;
+}
+
+.tabs {
+  display: flex;
+  gap: 10px;
+  padding: 14px;
+}
+
+.tabs button {
+  padding: 10px 16px;
+  border-radius: 10px;
+  border: none;
+  background: #1e293b;
+  color: #fff;
+  cursor: pointer;
+}
+
+.tabs button.active {
+  background: #22c55e;
+  color: #020617;
+}
+
+.section {
+  display: none;
+  padding: 16px;
+}
+
+.section.active {
+  display: block;
+}
+
+.card {
+  background: #020617;
+  padding: 18px;
+  border-radius: 16px;
+  margin-bottom: 16px;
+  box-shadow: inset 0 0 0 1px #1e293b;
+}
+
+input, button {
+  padding: 12px;
+  border-radius: 10px;
+  border: none;
+}
+
+input {
+  background: #0f172a;
+  color: #fff;
+}
+
+button.action {
+  background: #22c55e;
+  color: #020617;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+button.danger {
+  background: #ef4444;
+  color: #fff;
+}
+
+.user-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  border-bottom: 1px solid #1e293b;
+}
 </style>
 </head>
 
 <body>
 
-<div class="tabs">
-  <button class="active" onclick="openTab('users')">Users</button>
-  <button onclick="openTab('withdrawals')">Withdrawals</button>
-  <button onclick="openTab('logs')">Audit Logs</button>
-  <button onclick="openTab('countdown')">Countdown</button>
+<!-- LOGIN -->
+<div id="login">
+  <div class="login-box">
+    <h2>Admin Login</h2>
+    <input id="user" placeholder="Username">
+    <input id="pass" type="password" placeholder="Password">
+    <button onclick="login()">Login</button>
+  </div>
 </div>
 
-<!-- USERS -->
-<div id="users" class="section active">
-  <h3>Users</h3>
-  <input id="searchPhone" placeholder="Search phone number">
-  <button class="action green" onclick="searchUser()">Search</button>
+<!-- ADMIN PANEL -->
+<div id="admin">
+  <div class="header">GoalRush Jackpot — Admin Panel</div>
 
-  <div id="userResult"></div>
-</div>
+  <div class="tabs">
+    <button class="active" onclick="openTab('users')">Users</button>
+    <button onclick="openTab('withdrawals')">Withdrawals</button>
+    <button onclick="openTab('logs')">Audit Logs</button>
+    <button onclick="openTab('countdown')">Countdown</button>
+  </div>
 
-<!-- WITHDRAWALS -->
-<div id="withdrawals" class="section">
-  <h3>Withdrawals</h3>
-  <div id="withdrawList"></div>
-</div>
+  <!-- USERS -->
+  <div id="users" class="section active">
+    <div class="card">
+      <input id="search" placeholder="Search phone number" oninput="loadUsers()">
+    </div>
+    <div id="userList"></div>
+  </div>
 
-<!-- AUDIT LOGS -->
-<div id="logs" class="section">
-  <h3>Audit Logs</h3>
-  <button class="action red" onclick="clearLogs()">Clear Logs</button>
-  <div id="logList"></div>
-</div>
+  <!-- WITHDRAWALS -->
+  <div id="withdrawals" class="section">
+    <div id="withdrawList"></div>
+  </div>
 
-<!-- COUNTDOWN -->
-<div id="countdown" class="section">
-  <h3>Global Countdown</h3>
+  <!-- LOGS -->
+  <div id="logs" class="section">
+    <button class="action" onclick="clearLogs()">Clear Logs</button>
+    <div id="logList"></div>
+  </div>
 
-  <input id="days" type="number" placeholder="Days">
-  <input id="hours" type="number" placeholder="Hours">
-  <input id="minutes" type="number" placeholder="Minutes">
-  <input id="seconds" type="number" placeholder="Seconds">
+  <!-- COUNTDOWN -->
+  <div id="countdown" class="section">
+    <div class="card">
+      <input id="d" placeholder="Days">
+      <input id="h" placeholder="Hours">
+      <input id="m" placeholder="Minutes">
+      <input id="s" placeholder="Seconds">
+      <button class="action" onclick="startCountdown()">Start</button>
+      <button class="danger" onclick="resetCountdown()">Reset</button>
+    </div>
+  </div>
 
-  <button class="action green" onclick="startCountdown()">Start</button>
-  <button class="action red" onclick="resetCountdown()">Reset</button>
-
-  <p id="countdownStatus" style="color:yellow;margin-top:10px"></p>
 </div>
 
 <script>
-function openTab(id){
-  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
-  document.querySelectorAll('.tabs button').forEach(b=>b.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  event.target.classList.add('active');
-
-  if(id==='withdrawals') loadWithdrawals();
-  if(id==='logs') loadLogs();
-  if(id==='countdown') showCountdownStatus();
-}
-
-/* ---------- USERS ---------- */
-function searchUser(){
-  const phone = document.getElementById('searchPhone').value.trim();
-  const users = JSON.parse(localStorage.getItem('users') || '{}');
-  const box = document.getElementById('userResult');
-  box.innerHTML = '';
-
-  if(!users[phone]){
-    box.innerHTML = '<p>User not found</p>';
-    return;
+/* ================= LOGIN ================= */
+function login() {
+  if (
+    user.value === "GoalRush Jackpot" &&
+    pass.value === "242777Aa#"
+  ) {
+    login.style.display = "none";
+    admin.style.display = "block";
+    loadUsers();
+    loadWithdrawals();
+    loadLogs();
   }
-
-  const u = users[phone];
-  box.innerHTML = `
-    <div class="card">
-      <p><b>${phone}</b></p>
-      <p>Balance: ₦${(u.balance||0).toLocaleString()}</p>
-      <p>Status: ${u.status}</p>
-
-      <input id="fundAmount" type="number" placeholder="Fund amount">
-      <button class="action green" onclick="fundUser('${phone}')">Fund</button>
-
-      <button class="action orange" onclick="toggleUser('${phone}')">
-        ${u.status==='active'?'Disable':'Enable'}
-      </button>
-
-      <button class="action red" onclick="clearUser('${phone}')">Clear User</button>
-    </div>
-  `;
 }
 
-function fundUser(phone){
-  const amt = Number(document.getElementById('fundAmount').value);
-  if(amt<=0) return alert('Invalid amount');
-
-  const users = JSON.parse(localStorage.getItem('users'));
-  users[phone].balance = (users[phone].balance||0) + amt;
-  localStorage.setItem('users', JSON.stringify(users));
-
-  logAction(`Funded ${phone} with ₦${amt}`);
-  alert('User funded');
-  searchUser();
+/* ================= TABS ================= */
+function openTab(id) {
+  document.querySelectorAll(".section").forEach(s => s.classList.remove("active"));
+  document.querySelectorAll(".tabs button").forEach(b => b.classList.remove("active"));
+  document.getElementById(id).classList.add("active");
+  event.target.classList.add("active");
 }
 
-function toggleUser(phone){
-  const users = JSON.parse(localStorage.getItem('users'));
-  users[phone].status = users[phone].status==='active'?'disabled':'active';
-  localStorage.setItem('users', JSON.stringify(users));
-  logAction(`User ${phone} status changed`);
-  searchUser();
-}
+/* ================= USERS ================= */
+function loadUsers() {
+  const users = JSON.parse(localStorage.getItem("users")) || [];
+  const filter = search.value || "";
+  userList.innerHTML = "";
 
-function clearUser(phone){
-  const users = JSON.parse(localStorage.getItem('users'));
-  delete users[phone];
-  localStorage.setItem('users', JSON.stringify(users));
-  logAction(`User ${phone} cleared`);
-  document.getElementById('userResult').innerHTML='';
-}
-
-/* ---------- WITHDRAWALS ---------- */
-function loadWithdrawals(){
-  const w = JSON.parse(localStorage.getItem('withdrawals') || '[]');
-  const box = document.getElementById('withdrawList');
-  box.innerHTML = w.length?'' : '<p>No withdrawals</p>';
-
-  w.forEach(x=>{
-    box.innerHTML += `
-      <div class="card">
-        <p>${x.phone}</p>
-        <p>₦${x.amount}</p>
-        <p>${x.bankName}</p>
-        <p>Status: ${x.status}</p>
+  users.filter(u => u.phone.includes(filter)).forEach(u => {
+    const div = document.createElement("div");
+    div.className = "card";
+    div.innerHTML = `
+      <div class="user-row">
+        <strong>${u.phone}</strong>
+        <span>₦${u.balance.toLocaleString()}</span>
       </div>
+      <input placeholder="Amount" id="amt-${u.phone}">
+      <button class="action" onclick="fund('${u.phone}')">Fund</button>
     `;
+    userList.appendChild(div);
   });
 }
 
-/* ---------- AUDIT LOGS ---------- */
-function logAction(action){
-  const logs = JSON.parse(localStorage.getItem('auditLogs') || '[]');
-  logs.push({time:new Date().toLocaleString(),action});
-  localStorage.setItem('auditLogs', JSON.stringify(logs));
-}
-
-function loadLogs(){
-  const logs = JSON.parse(localStorage.getItem('auditLogs') || '[]');
-  const box = document.getElementById('logList');
-  box.innerHTML = logs.length?'' : '<p>No logs</p>';
-
-  logs.forEach(l=>{
-    box.innerHTML += `<div class="card">${l.time} — ${l.action}</div>`;
+function fund(phone) {
+  const amt = Number(document.getElementById(`amt-${phone}`).value);
+  let users = JSON.parse(localStorage.getItem("users"));
+  users = users.map(u => {
+    if (u.phone === phone) u.balance += amt;
+    return u;
   });
+  localStorage.setItem("users", JSON.stringify(users));
+  log(`Funded ${phone} ₦${amt}`);
+  loadUsers();
 }
 
-function clearLogs(){
-  localStorage.removeItem('auditLogs');
+/* ================= WITHDRAWALS ================= */
+function loadWithdrawals() {
+  const list = JSON.parse(localStorage.getItem("withdrawals")) || [];
+  withdrawList.innerHTML = list.map(w =>
+    `<div class="card">${w.phone} — ₦${w.amount}</div>`
+  ).join("");
+}
+
+/* ================= LOGS ================= */
+function log(msg) {
+  const logs = JSON.parse(localStorage.getItem("logs")) || [];
+  logs.push(`${new Date().toLocaleString()} — ${msg}`);
+  localStorage.setItem("logs", JSON.stringify(logs));
+}
+
+function loadLogs() {
+  const logs = JSON.parse(localStorage.getItem("logs")) || [];
+  logList.innerHTML = logs.map(l => `<div>${l}</div>`).join("");
+}
+
+function clearLogs() {
+  localStorage.removeItem("logs");
   loadLogs();
 }
 
-/* ---------- COUNTDOWN ---------- */
-function startCountdown(){
-  const d = +days.value||0, h=+hours.value||0, m=+minutes.value||0, s=+seconds.value||0;
-  const total = (((d*24+h)*60+m)*60+s);
-  if(total<=0) return alert('Invalid time');
-
-  const endTime = Date.now() + total*1000;
-  localStorage.setItem('globalCountdown', JSON.stringify({endTime,running:true}));
-  logAction('Countdown started');
-  showCountdownStatus();
+/* ================= COUNTDOWN ================= */
+function startCountdown() {
+  const total =
+    (+d.value * 86400) +
+    (+h.value * 3600) +
+    (+m.value * 60) +
+    (+s.value);
+  localStorage.setItem("globalCountdown", Date.now() + total * 1000);
 }
 
-function resetCountdown(){
-  localStorage.setItem('globalCountdown', JSON.stringify({endTime:0,running:false}));
-  logAction('Countdown reset');
-  showCountdownStatus();
-}
-
-function showCountdownStatus(){
-  const data = JSON.parse(localStorage.getItem('globalCountdown') || '{}');
-  const el = document.getElementById('countdownStatus');
-  if(!data.running || !data.endTime){
-    el.innerText = 'Countdown stopped';
-    return;
-  }
-  const diff = Math.max(0, Math.floor((data.endTime-Date.now())/1000));
-  el.innerText = diff>0 ? 'Countdown running' : 'Countdown ended';
+function resetCountdown() {
+  localStorage.setItem("globalCountdown", 0);
 }
 </script>
 
